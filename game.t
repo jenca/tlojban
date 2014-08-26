@@ -24,25 +24,77 @@ gameMain: GameMainDef
 ;
 
 startRoom: Room 'Start'
-    "You find yourself in a bare room with a stool and a printer. There is a door on the north wall.  "
+    "You find yourself in a small closet like room. A small device stands atop a slender pole mounted to the floor. The device has a large red button on top and a small slot on the side. A door is to the north. "
+    north = startDoor
+;
+
++ startDoor: Door 'simple door; wood wooden north'
+    "A simple door with a handle. "
+    otherSide = startDoorOther
+    lockability = lockableWithoutKey
+    isLocked = true
 ;
 
 + me: Thing 'you'     
     isFixed = true       
     person = 2
     contType = Carrier
-    desc = "The most beautiful girl in the world. I love you babe!"
 ;
 
-+ stool: Thing 'wooden stool;wood cheap unfurnished'
-    "A cheap unfurnished wooden stool. "
++ printer: Thing 'small device;metal;'
+    "A small metal box attached to a pole rising from the floor waist high. There is a single button on top and a small slot on the side. "
+    isFixed = true
+;
+
+++ slot: AttachableComponent 'small slot;;'
+    "The small slot is empty"
+;
+
+++ button: AttachableComponent, Button 'button;large red device printer;print'
+    "A large red button atop the printer that reads 'Print'. "
+    pushed = nil
+    makePushed() {
+        if (pushed == nil) {
+            paper.moveInto(me);
+            pushed = true;
+            "The device beeps twice and begins to emit a soft mechanical whirling. ";
+            "After a moment you take a small slip of paper as it appears in the slot. ";
+            startDoor.makeOpen(true);
+            "You hear a click come from the door's handle.";
+        } else {
+            "The button depresses but the device doesn't respond.";
+        }
+    }
+;
+
++ paper: Thing 'slip of paper;small slip of<prep>'
+    "The small piece of paper reads: \'lo ckiku ku crino\'. "
+    location = nil
+;
+
+Doer 'read paper' {
+    exec(curCmd) { doInstead(Examine, gDobj); }
+}
+
+testChamber: Room 'Test Chamber 1'
+    "You stand in a bare room with a small wooden stool. There are doors to the south and north.  "
+    south = startDoorOther
+;
+
++ startDoorOther: Door 'door;wood simple south southern'
+    "A simple door with a handle. "
+    otherSide = startDoor
+;
+
++ stool: Thing 'small wooden stool;cheap unfurnished wood'
+    "A small cheap unfurnished wooden stool. "
     isFixed = true
     contType = On
 ;
 
 class ColoredKey: Key
     vocab = 'key; painted'
-    desc = "A key painted <<color>>. Some paint is chipping away. "
+    desc = "A key painted in <<color>> paint. "
     color = 'silver'
     plausableLockList = [door]
     preinitThing() {
@@ -51,6 +103,12 @@ class ColoredKey: Key
         name = color + ' key';
     }
 
+    iobjFor(UnlockWith) {
+        verify() { return nonObvious; }
+    }
+    iobjFor(Unlock) {
+        verify() { return nonObvious; }
+    }
 ;
 
 ++ redKey: ColoredKey
@@ -58,37 +116,34 @@ class ColoredKey: Key
 ;
 
 ++ blueKey: ColoredKey
-    color = 'blue'
+ color = 'blue'
 ;
 
 ++ greenKey: ColoredKey
     color = 'green'
     actualLockList = [door]
 
-    preinitThing() { inherited; knownLockList = []; }
-;
-
-+ printer: Thing 'printer;;'
-    "A box with a button ontop and a small slot on the side for paper to come out of. "
-    isFixed = true
-;
-
-++ button: AttachableComponent, Button 'button;red'
-    "A red button ontop of the printer that reads \'Push Me'\. "
-    makePushed() {
-        paper.moveInto(me);
-        "You take a piece of paper as it comes through the slot. ";
+    iobjFor(UnlockWith) {
+        action() { finishGameMsg('Congrats, you solved the puzzle!', []); }
     }
 ;
 
-+ paper: Thing 'piece of paper;white piece of<prep>'
-    "A small piece of paper that reads \'lo ckiku ku crino\'. "
-    location = nil
-;
-
-+ door: Door 'door;wood'
-    "A simple door with a handle. "
++ door: Door 'door;wood simple north northern'
+    "A simple door with a handle. Below the handle is a small keyhole. "
     lockability = lockableWithKey
     otherSide = self
     destination = unknownDest_
 ;
+
+++ handle : AttachableComponent 'door handle;brass small;'
+   "A small brass handle."
+;
+
+Doer
+    cmd = 'unlock door'
+    exec(curCmd) {
+        "What do you want to unlock it with?";
+        abort;
+    }
+;
+
